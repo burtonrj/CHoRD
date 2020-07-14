@@ -1,0 +1,9 @@
+env
+data
+data/consolidated
+login.txt
+*.csv
+*.xls
+*.xlsx
+*.db
+*.pickle
