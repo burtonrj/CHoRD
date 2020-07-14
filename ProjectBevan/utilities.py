@@ -1,8 +1,7 @@
-from itertools import islice
 from IPython import get_ipython
+from warnings import warn
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
-import pandas as pd
 import dateparser
 import re
 
@@ -48,7 +47,7 @@ def progress_bar(x: iter,
     return tqdm(x, **kwargs)
 
 
-def parse_datetime(datetime: str) -> dict:
+def parse_datetime(datetime: str or None) -> dict:
     """
     Takes a datetime as string and returns a dictionary of parsed date and time. Implements the dateparser
     library for flexible date time parsing (https://dateparser.readthedocs.io/). Assumes GB formatting for
@@ -65,6 +64,9 @@ def parse_datetime(datetime: str) -> dict:
          "time": float (minutes passed for given date) or None (if no time value present in parsed string)}
     """
     result = dict()
+    if type(datetime) is not str:
+        warn(f"Passed a non-string value to parse_datetime: {datetime}. Returning Null")
+        return {"date": None, "time": None}
     datetime = datetime.strip()
     pattern = "^[0-9]{1,2}[/.-][0-9]{1,2}[/.-]([0-9]{2}|[0-9]{4})$"
     if re.match(pattern, datetime):
