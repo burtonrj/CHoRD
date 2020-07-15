@@ -4,11 +4,33 @@ import os
 import csv
 
 
-def _remove_illegal_chars(x):
+def _remove_illegal_chars(x) -> str:
+    """
+    Remove illegal quote characters
+
+    Parameters
+    ----------
+    x: str
+
+    Returns
+    -------
+    str
+    """
     return x.replace("\\\\", "").replace('"', "")
 
 
 def clean_complex_text(path: str):
+    """
+    Clean files containing complex text. Warning: file is overwritten!
+
+    Parameters
+    ----------
+    path: str
+        File path
+    Returns
+    -------
+    None
+    """
     print("Attempting to clean complex text....")
     for filename in tqdm(os.listdir(path)):
         try:
@@ -26,6 +48,17 @@ def clean_complex_text(path: str):
 
 
 def _safe_read(path: str):
+    """
+    Attempt to read csv file as a Pandas DataFrame. Catches warnings for improved error handling.
+
+    Parameters
+    ----------
+    path: str
+        File path
+    Returns
+    -------
+    Pandas.DataFrame
+    """
     try:
         return pd.read_csv(path,
                            engine="python",
@@ -39,12 +72,37 @@ def _safe_read(path: str):
 
 
 def _unique_categories(path: str):
+    """
+    List all the unique categories of files in a directory containing C&V extracts
+
+    Parameters
+    ----------
+    path: str
+        Data directory
+    Returns
+    -------
+    list
+    """
     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     return list(set([x.split("-")[0] for x in files]))
 
 
 def consolidate(read_path: str,
                 write_path: str):
+    """
+    Given a directory containing C&V extracts, generate consolidated csv files stored in 'write_path'.
+    Files consolidated by file category.
+
+    Parameters
+    ----------
+    read_path: str
+        Directory containing original csv files
+    write_path: str
+        Directory to write new consolidated csv files too
+    Returns
+    -------
+    None
+    """
     write_path = os.path.join(write_path, "consolidated")
     if not os.path.isdir(write_path):
         os.mkdir(write_path)
