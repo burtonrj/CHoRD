@@ -1,6 +1,7 @@
 from ProjectBevan.utilities import parse_datetime, verbose_print, progress_bar
 from ProjectBevan.schema import create_database
 from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 from typing import List
 import sqlite3 as sql
 import pandas as pd
@@ -345,7 +346,7 @@ class Populate:
             df.to_sql(name=table_name, con=self._connection, if_exists="append", index=False)
             return
         chunk_size = int(df.shape[0]/10)
-        with progress_bar(verbose=self.verbose, total=df.shape[0]) as pbar:
+        with tqdm(total=df.shape[0]) as pbar:
             for chunk in chunker(df, chunk_size):
                 chunk.to_sql(name=table_name, con=self._connection, if_exists="append", index=False)
                 pbar.update(chunk_size)
