@@ -1,10 +1,8 @@
 from tqdm import tqdm
 from warnings import warn
 import requests
-import urllib3
 import time
 import os
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def get_credentials(path: str):
