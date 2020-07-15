@@ -20,10 +20,6 @@ class TestFetchData(unittest.TestCase):
         self.assertTrue(all(x in token.keys()
                             for x in ['access_token', 'token_type', 'expires_in', 'refresh_token']))
 
-    def test_get_json(self):
-        username, pw = get_credentials(path=f"{os.getcwd()}/login.txt")
-        token = get_token(username=username, pw=pw)
-        json = get_json(token=token)
 
 
 

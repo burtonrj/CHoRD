@@ -1,1 +1,0 @@
-p = Populate(database_path="ProjectBevan.db", data_path="data/consolidated")

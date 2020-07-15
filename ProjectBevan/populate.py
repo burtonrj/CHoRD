@@ -303,9 +303,9 @@ class Populate:
         events = pd.read_csv(self._get_path("Outcomes"), low_memory=False)[["PATIENT_ID", "DESTINATION"]]
         death_status = list()
         for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
-            events = events[events.PATIENT_ID == pt_id]
-            events = events[events.DESTINATION.isin(self.died_events)]
-            if events.shape[0] == 0:
+            pt_events = events[events.PATIENT_ID == pt_id]
+            pt_events = pt_events[pt_events.DESTINATION.isin(self.died_events)]
+            if pt_events.shape[0] == 0:
                 death_status.append(0)
             else:
                 death_status.append(1)
@@ -416,9 +416,12 @@ class Populate:
                           "CREATE INDEX result_micro ON Microbiology (test_result)",
                           "CREATE INDEX name_path ON Pathology (test_name)",
                           "CREATE INDEX cat_path ON Pathology (test_category)"]
-        for x in sql_statements:
+        for x in progress_bar(sql_statements, verbose=self.verbose):
             self._curr.execute(x)
             self._connection.commit()
+        self.vprint("\n")
+        self.vprint("Complete!....")
+        self.vprint("====================================================")
 
     def close(self):
         self._connection.close()
