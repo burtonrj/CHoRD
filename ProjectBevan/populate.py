@@ -521,23 +521,33 @@ class Populate:
             Modified Pandas DataFrame with covid_status column
         """
         covid = pd.read_csv(self._get_path("Covid19"), low_memory=False)
+        covid = _get_date_time(df=covid)
+        covid["test_date"] = pd.to_datetime(covid["test_date"], format="%d/%m/%Y")
         covid_status = list()
+        covid_date_pos = list()
         for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
-            pt_status = covid[covid.PATIENT_ID == pt_id].TEXT.values
+            pt_status = covid[covid.PATIENT_ID == pt_id].sort_values("test_date", ascending=True)
             # No results, status is unknown
-            if len(pt_status) == 0:
+            if pt_status.shape[0] == 0:
                 covid_status.append("U")
+                covid_date_pos.append(None)
                 continue
             # If the patient was positive at any point,
-            if any([x == "Positive" for x in pt_status]):
+            if any([x == "Positive" for x in pt_status.TEXT]):
+                positives = pt_status[pt_status.TEXT == "Positive"]
+                oldest_positive_date = pd.to_datetime(str(positives.test_date.values[0])).strftime("%d/%m/%Y")
                 covid_status.append("P")
+                covid_date_pos.append(oldest_positive_date)
             # If the patient has no positive results and not all tests are "In Progress", then register as negative
             elif all([x != "Positive" for x in pt_status]) and not all([x == "In Progress" for x in pt_status]):
                 covid_status.append("N")
+                covid_date_pos.append(None)
             else:
                 # Otherwise status is unknown i.e. they are all "In Progress" with no "Positive" results
                 covid_status.append("U")
+                covid_date_pos.append(None)
         df["covid_status"] = covid_status
+        df["covid_date_first_positive"] = covid_date_pos
         return df
 
     def _register_death(self, df: pd.DataFrame):

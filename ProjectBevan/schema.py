@@ -22,6 +22,7 @@ def _schema():
         date_entered TEXT,
         time_entered REAL,
         covid_status TEXT DEFAULT "U",
+        covid_date_first_positive TEXT,
         death INTEGER DEFAULT 0
         );
     """
