@@ -1,7 +1,6 @@
 from ProjectBevan.utilities import parse_datetime, verbose_print, progress_bar
 from ProjectBevan.schema import create_database
 from multiprocessing import Pool, cpu_count
-from tqdm import tqdm
 from typing import List
 import sqlite3 as sql
 import pandas as pd
@@ -9,18 +8,63 @@ import re
 import os
 
 
-def _indexed_datetime(x):
+def _indexed_datetime(x: tuple or list) -> tuple:
+    """
+    Wrapper function for parse_datetime to allow for multiprocessing.
+
+    Parameters
+    ----------
+    x: tuple or list
+        (identifier, datetime to parse)
+
+    Returns
+    -------
+    tuple
+        (identifier, {'time': processed time as float, 'date': processed date as string)
+    """
     return x[0], parse_datetime(x[1])
 
 
-def chunker(seq, size):
+def chunker(seq: pd.DataFrame,
+            size: int):
+    """
+    Creates chunks of Pandas DataFrame of given size
+    Credit to http://stackoverflow.com/a/434328
+
+    Parameters
+    ----------
+    seq: Pandas.DataFrame
+    size: int
+
+    Returns
+    -------
+    tuple
+        Sequence of Pandas.DataFrame of given size
+    """
     # from http://stackoverflow.com/a/434328
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 def _re_search_df(pattern: str,
                   x: str,
-                  group_idx: int = 0):
+                  group_idx: int = 0) -> str or None:
+    """
+    Given a some regex pattern with 1 or more capturing groups and the target string,
+    return the group at the given index (if no match, returns None).
+
+    Parameters
+    ----------
+    pattern: str
+        A valid regular exp pattern with 1 or more capturing groups
+    x: str
+        String to parse
+    group_idx: int
+        Group index to extract
+
+    Returns
+    -------
+    str or None
+    """
     match = re.search(pattern=pattern,
                       string=x)
     if match is None:
@@ -31,7 +75,21 @@ def _re_search_df(pattern: str,
 
 
 def _rename(df: pd.DataFrame,
-            additional_mappings: dict or None = None):
+            additional_mappings: dict or None = None) -> pd.DataFrame:
+    """
+    Rename columns given a DataFrame from the C&V extracts. By default "PATIENT_ID" is renamed to "patient_id"
+    and "REQUEST_LOCATION" is renamed to "request_location". Additional mappings can be given to rename additional
+    columns.
+
+    Parameters
+    ----------
+    df: Pandas.DataFrame
+    additional_mappings: dict
+
+    Returns
+    -------
+    Pandas.DataFrame
+    """
     df = df.rename({"PATIENT_ID": "patient_id",
                     "REQUEST_LOCATION": "request_location"},
                    axis=1)
@@ -43,7 +101,26 @@ def _rename(df: pd.DataFrame,
 def _get_date_time(df: pd.DataFrame,
                    col_name: str = "TEST_DATE",
                    new_date_name: str = "test_date",
-                   new_time_name: str = "test_time"):
+                   new_time_name: str = "test_time") -> pd.DataFrame:
+    """
+    Given a DataFrame and a target column (col_name) containing a string with date and/or time content, using
+    multiprocessing and the parse_datetime function, generate a new column for dates and a new column for times.
+    Original target column will be dropped and modified DataFrame returned.
+
+    Parameters
+    ----------
+    df: Pandas.DataFrame
+    col_name: str
+        Target column
+    new_date_name: str
+        New column name for dates
+    new_time_name: str
+        New column name for times
+
+    Returns
+    -------
+    Pandas.DataFrame
+    """
     idx_values = df.reset_index()[["index", col_name]].values
     idx_values = [(x[0], x[1]) for x in idx_values]
     pool = Pool(cpu_count())
@@ -57,6 +134,81 @@ def _get_date_time(df: pd.DataFrame,
 
 
 class Populate:
+    """
+    Create the ProjectBevan database and populate using C&V data extracts.
+
+    Parameters
+    -----------
+    database_path: str
+        Location of the ProjectBevan database. NOTE: the database is READ ONLY and so a new database
+        will always be generated at the path given.
+    data_path: str
+        Location of the consolidated C&V data extracts (see ProjectBevan.process_data)
+    verbose: bool, (default=True)
+        If True, print regular feedback
+    died_events: list or None,
+        List of events that correspond to a patient death
+        Default: ['Died - DEATHS INCLUDING STILLBIRTHS',
+                'Died In Dept.',
+                'Died - USUAL PLACE OF RESIDENCE',
+                'Died - NHS HOSP OTHER PROV - GENERAL']
+    path_files: list or None,
+        List of files expected when generating the Pathology table.
+        Default:["LFT",
+               "ABG",
+               "ACE",
+               "AntiXa",
+               "BgaPOCT",
+               "CoagScr",
+               "Covid19Ab",
+               "CRP",
+               "Ddimer",
+               "EPS",
+               "FBC",
+               "Ferritin",
+               "GlucoseRand",
+               "HbA1c",
+               "HsTrop",
+               "ImmGlob",
+               "LDH",
+               "LFT",
+               "Lip",
+               "LipF",
+               "ParaProt",
+               "ProCalc",
+               "TCC",
+               "TFSat",
+               "UandE",
+               "VitD"]
+    micro_files: list or None
+        List of files expected when generating the Microbiology table.
+        Default = ["AsperELISA",
+                    "AsperPCR",
+                    "BCult",
+                    "RESPL"]
+    comorbid_files: list or None
+        List of files expected when generating the Cormobid table.
+        Default = ["CoMorbid"]
+    patient_files: list or None
+        List of files expected when generating the Patient table.
+        Default = ["People",
+                   "Outcomes",
+                   "Covid19"]
+    haem_files: list or None
+        List of files expected when generating the ComplexHaematology table.
+        Default = ["CompAlt",
+                    "CompClass"]
+    critcare_files: list or None
+        List of files expected when generating the CritCare table.
+        Default = ["CritCare"]
+    radiology_files: list or None
+        List of files expected when generating the Radiology table.
+        Default = ["XRChest",
+                   "CTangio"]
+    events_files: list or None
+        List of files expected when generating the Events table.
+        Default =  ["Outcomes"]
+    """
     def __init__(self,
                  database_path: str,
                  data_path: str,
@@ -141,7 +293,14 @@ class Populate:
                                 'Died - NHS HOSP OTHER PROV - GENERAL']
         self._all_files_present()
 
-    def _all_files_present(self):
+    def _all_files_present(self) -> None:
+        """
+        Assert that all the expected files are present within data_path, if not, AssertionError raised.
+
+        Returns
+        -------
+        None
+        """
         files = [os.path.splitext(f)[0] for f in os.listdir(self.data_path)
                  if os.path.isfile(os.path.join(self.data_path, f))]
         for group in [self.events_files, self.patient_files, self.haem_files,
@@ -152,21 +311,52 @@ class Populate:
 
     def _get_path(self,
                   file_basename: str):
+        """
+        Produce the file path for a given target file (file_basename expected to be without file extension
+        e.g. "Outcomes" not "Outcomes.csv"
+
+        Parameters
+        ----------
+        file_basename: str
+
+        Returns
+        -------
+        None
+        """
         return os.path.join(self.data_path, f"{file_basename}.csv")
 
     def _insert(self,
                 df: pd.DataFrame,
                 table_name: str):
+        """
+        Given a DataFrame and some target table in the ProjectBevan database, append the contents of that
+        DataFrame into the target table, whilst also providing a progress bar is verbose set to True.
+
+        Parameters
+        ----------
+        df: Pandas.DataFrame
+        table_name: str
+
+        Returns
+        -------
+        None
+        """
         if not self.verbose:
             df.to_sql(name=table_name, con=self._connection, if_exists="append", index=False)
             return
         chunk_size = int(df.shape[0]/10)
-        with tqdm(total=df.shape[0]) as pbar:
+        with progress_bar(verbose=self.verbose, total=df.shape[0]) as pbar:
             for chunk in chunker(df, chunk_size):
                 chunk.to_sql(name=table_name, con=self._connection, if_exists="append", index=False)
                 pbar.update(chunk_size)
 
     def _pathology(self):
+        """
+        Generate the Pathology table
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populating Pathology Table ----")
         for file in self.path_files:
             self.vprint(f"Processing {file}....")
@@ -186,6 +376,23 @@ class Populate:
                           sample_type_pattern: str,
                           result_pattern: str,
                           test_name: str):
+        """
+        Template method for generalised processing of a Microbiology related DataFrame and subsequent appendage
+        to the Microbiology table.
+
+        Parameters
+        ----------
+        df: Pandas.DataFrame
+        sample_type_pattern: str
+            Search pattern used for identifying sample type in TEXT column
+        result_pattern: str
+            Search pattern used for identifying result in TEXT column
+        test_name: str
+            Test name corresponding to the DataFrame
+        Returns
+        -------
+        None
+        """
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
         df = _get_date_time(df)
         # pull out the sample type
@@ -198,6 +405,13 @@ class Populate:
         self._insert(df=df, table_name="Microbiology")
 
     def _microbiology(self):
+        """
+        Populate the Microbiology table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populating Microbiology Table ----")
 
         # AsperELISA ----------------------------
@@ -248,6 +462,13 @@ class Populate:
                                test_name="RESPL")
 
     def _comorbid(self):
+        """
+        Populate the Comorbid table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populating Comorbid Table ----")
         for file in self.comorbid_files:
             df = pd.read_csv(self._get_path(file), low_memory=False)
@@ -266,6 +487,13 @@ class Populate:
             self._insert(df=df, table_name="Comorbid")
 
     def _haem(self):
+        """
+        Populate the ComplexHaematology table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populating ComplexHaematology Table ----")
         for file in progress_bar(self.haem_files, verbose=self.verbose):
             df = pd.read_csv(self._get_path(file), low_memory=False)
@@ -279,6 +507,19 @@ class Populate:
             self._insert(df=df, table_name="ComplexHaematology")
 
     def _covid_status(self, df: pd.DataFrame):
+        """
+        Given the Patients DataFrame, search the Covid19 file and determine a patients COVID-19 status:
+            * Positive = one or more instances of the patient being declared positive
+            * Negative = no record of positive COVID-19 and NOT all COVID status are equal to "In Progress"
+            * Unknown = Either no value found for the patient or all COVID status values equal to "In Progress"
+        Parameters
+        ----------
+        df: Pandas.DataFrame
+        Returns
+        -------
+        Pandas.DataFrame
+            Modified Pandas DataFrame with covid_status column
+        """
         covid = pd.read_csv(self._get_path("Covid19"), low_memory=False)
         covid_status = list()
         for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
@@ -300,6 +541,17 @@ class Populate:
         return df
 
     def _register_death(self, df: pd.DataFrame):
+        """
+        Given the Patient DataFrame, search the Outcomes file for record of patient death
+
+        Parameters
+        ----------
+        df: Pandas.DataFrame
+        Returns
+        -------
+        Pandas.DataFrame
+            Modified Pandas DataFrame with death column
+        """
         events = pd.read_csv(self._get_path("Outcomes"), low_memory=False)[["PATIENT_ID", "DESTINATION"]]
         death_status = list()
         for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
@@ -313,6 +565,13 @@ class Populate:
         return df
 
     def _patients(self):
+        """
+        Populate Patients table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populating Patients Table ----")
         self.vprint("...create basic table")
         df = pd.read_csv(self._get_path("People"), low_memory=False)
@@ -331,6 +590,13 @@ class Populate:
         self._insert(df=df, table_name="Patients")
 
     def _critical_care(self):
+        """
+        Populate CritCare table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populating Critical Care Table ----")
         df = pd.read_csv(self._get_path("CritCare"), low_memory=False)
         df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE"], axis=1, inplace=True)
@@ -347,6 +613,13 @@ class Populate:
         self._insert(df=df, table_name="CritCare")
 
     def _radiology(self):
+        """
+        Populate Radiology table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populate Radiology Table ----")
         self.vprint("....processing CT Angiogram pulmonary results")
         df = pd.read_csv(self._get_path("CTangio"), low_memory=False)
@@ -367,6 +640,13 @@ class Populate:
         self._insert(df=df, table_name="Radiology")
 
     def _events(self):
+        """
+        Populate Events table
+
+        Returns
+        -------
+        None
+        """
         self.vprint("---- Populate Events Table ----")
         df = pd.read_csv(self._get_path("Outcomes"), low_memory=False)
         df.drop(["WIMD", "GENDER"], axis=1, inplace=True)
@@ -385,6 +665,13 @@ class Populate:
         self._insert(df=df, table_name="Events")
 
     def populate(self):
+        """
+        Populate all tables.
+
+        Returns
+        -------
+        None
+        """
         self.vprint("=============== Populating database ===============")
         self.vprint("\n")
         self._patients()
@@ -400,6 +687,13 @@ class Populate:
         self.vprint("====================================================")
 
     def create_indexes(self):
+        """
+        Generate some useful indexes (ASSUMES THAT POPULATE METHOD HAS BEEN PREVIOUSLY CALLED)
+
+        Returns
+        -------
+        None
+        """
         self.vprint("=============== Generating Indexes ===============")
         sql_statements = ["CREATE INDEX crit_care_pt_id ON CritCare (patient_id)",
                           "CREATE INDEX events_pt_id ON Events (patient_id)",
@@ -424,4 +718,11 @@ class Populate:
         self.vprint("====================================================")
 
     def close(self):
+        """
+        Close database connection.
+
+        Returns
+        -------
+        None
+        """
         self._connection.close()

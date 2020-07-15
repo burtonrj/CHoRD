@@ -24,7 +24,7 @@ def which_environment() -> str:
         return 'terminal'
 
 
-def progress_bar(x: iter,
+def progress_bar(x: iter or None = None,
                  verbose: bool = True,
                  **kwargs) -> callable:
     """
@@ -43,7 +43,11 @@ def progress_bar(x: iter,
     if not verbose:
         return x
     if which_environment() == 'jupyter':
+        if x is None:
+            return tqdm_notebook(**kwargs)
         return tqdm_notebook(x, **kwargs)
+    if x is None:
+        return tqdm_notebook(**kwargs)
     return tqdm(x, **kwargs)
 
 
