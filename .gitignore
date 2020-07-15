@@ -8,3 +8,4 @@ data/consolidated
 *.pickle
 *.zip
 *.txt
+.idea
