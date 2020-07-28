@@ -184,9 +184,10 @@ class Populate:
     micro_files: list or None
         List of files expected when generating the Microbiology table.
         Default = ["AsperELISA",
-                    "AsperPCR",
-                    "BCult",
-                    "RESPL"]
+                   "AsperPCR",
+                   "BCult",
+                   "RESPL",
+                   "Covid19"]
     comorbid_files: list or None
         List of files expected when generating the Cormobid table.
         Default = ["CoMorbid"]
@@ -461,6 +462,15 @@ class Populate:
                                sample_type_pattern=sample_type_pattern,
                                result_pattern=result_pattern,
                                test_name="RESPL")
+        # Covid19 ----------------------------
+        self.vprint("...processing Respiratory Virus results")
+        df = pd.read_csv(self._get_path("Covid19"), low_memory=False)
+        df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
+        df = _get_date_time(df)
+        df = _rename(df, additional_mappings={"TEXT": "test_result"})
+        df["valid"] = df.test_result.apply(lambda x: int(x != "Issue with result"))
+        df["test_name"] = "Covid19-PCR"
+        self._insert(df=df, table_name="Microbiology")
 
     def _comorbid(self):
         """
