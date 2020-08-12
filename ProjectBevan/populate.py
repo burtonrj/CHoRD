@@ -364,8 +364,9 @@ class Populate:
             self.vprint(f"Processing {file}....")
             df = pd.read_csv(self._get_path(file), low_memory=False)
             df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-            df = _get_date_time(df)
-            df = df.melt(id_vars=["PATIENT_ID", "REQUEST_LOCATION", "test_date", "test_time"],
+            df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
+            df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
+            df = df.melt(id_vars=["PATIENT_ID", "REQUEST_LOCATION", "test_date", "test_time", "collection_date", "collection_time"],
                          var_name="test_name",
                          value_name="test_result")
             df["valid"] = df.test_result.apply(lambda x: int(x != "Issue with result"))
@@ -396,7 +397,8 @@ class Populate:
         None
         """
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df)
+        df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
+        df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
         # pull out the sample type
         df["sample_type"] = df.TEXT.apply(lambda x: _re_search_df(pattern=sample_type_pattern, x=x, group_idx=0))
         # Pull out result
@@ -466,7 +468,8 @@ class Populate:
         self.vprint("...processing Respiratory Virus results")
         df = pd.read_csv(self._get_path("Covid19"), low_memory=False)
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df)
+        df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
+        df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
         df = _rename(df, additional_mappings={"TEXT": "test_result"})
         df["valid"] = df.test_result.apply(lambda x: int(x != "Issue with result"))
         df["test_name"] = "Covid19-PCR"
@@ -509,7 +512,8 @@ class Populate:
         for file in progress_bar(self.haem_files, verbose=self.verbose):
             df = pd.read_csv(self._get_path(file), low_memory=False)
             df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-            df = _get_date_time(df)
+            df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
+            df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
             # pull out the sample type
             df["test_name"] = None
             df["test_result"] = None
@@ -532,12 +536,13 @@ class Populate:
             Modified Pandas DataFrame with covid_status column
         """
         covid = pd.read_csv(self._get_path("Covid19"), low_memory=False)
-        covid = _get_date_time(df=covid)
-        covid["test_date"] = pd.to_datetime(covid["test_date"], format="%d/%m/%Y")
+        covid = _get_date_time(covid, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
+        covid = _get_date_time(covid, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
+        covid["collection_date"] = pd.to_datetime(covid["collection_date"], format="%d/%m/%Y")
         covid_status = list()
         covid_date_pos = list()
         for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
-            pt_status = covid[covid.PATIENT_ID == pt_id].sort_values("test_date", ascending=True)
+            pt_status = covid[covid.PATIENT_ID == pt_id].sort_values("collection_date", ascending=True)
             # No results, status is unknown
             if pt_status.shape[0] == 0:
                 covid_status.append("U")
@@ -546,7 +551,7 @@ class Populate:
             # If the patient was positive at any point,
             if any([x == "Positive" for x in pt_status.TEXT]):
                 positives = pt_status[pt_status.TEXT == "Positive"]
-                oldest_positive_date = pd.to_datetime(str(positives.test_date.values[0])).strftime("%d/%m/%Y")
+                oldest_positive_date = pd.to_datetime(str(positives.collection_date.values[0])).strftime("%d/%m/%Y")
                 covid_status.append("P")
                 covid_date_pos.append(oldest_positive_date)
             # If the patient has no positive results and not all tests are "In Progress", then register as negative
@@ -648,6 +653,9 @@ class Populate:
         df = _get_date_time(df, col_name="TEST_DATE",
                             new_date_name="test_date",
                             new_time_name="test_time")
+        df = _get_date_time(df, col_name="TAKED_DATE",
+                            new_date_name="collection_date",
+                            new_time_name="collection_time")
         df["test_category"] = "CTangio"
         df = _rename(df, additional_mappings={"TEXT": "raw_text"})
         self.vprint("....processing X-ray results")
@@ -656,6 +664,9 @@ class Populate:
         df = _get_date_time(df, col_name="TEST_DATE",
                             new_date_name="test_date",
                             new_time_name="test_time")
+        df = _get_date_time(df, col_name="TAKED_DATE",
+                            new_date_name="collection_date",
+                            new_time_name="collection_time")
         df["test_category"] = "XRChest"
         df = _rename(df, additional_mappings={"TEXT": "raw_text"})
         self._insert(df=df, table_name="Radiology")
