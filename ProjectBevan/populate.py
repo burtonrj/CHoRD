@@ -486,7 +486,7 @@ class Populate:
         self.vprint("---- Populating Comorbid Table ----")
         for file in self.comorbid_files:
             df = pd.read_csv(self._get_path(file), low_memory=False)
-            df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE"], axis=1, inplace=True)
+            df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE", "TAKEN_DATE"], axis=1, inplace=True)
             df = _rename(df, additional_mappings={"SOLIDORGANTRANSPLANT": "solid_organ_transplant",
                                                   "CANCER": "cancer",
                                                   "SEVERERESPIRATORY": "severe_resp",
@@ -551,7 +551,11 @@ class Populate:
             # If the patient was positive at any point,
             if any([x == "Positive" for x in pt_status.TEXT]):
                 positives = pt_status[pt_status.TEXT == "Positive"]
-                oldest_positive_date = pd.to_datetime(str(positives.collection_date.values[0])).strftime("%d/%m/%Y")
+                collection_dates = [x for x in positives.collection_date.values if not pd.isnull(x)]
+                if not collection_dates:
+                    oldest_positive_date = pd.to_datetime(str(positives.test_date.values[0])).strftime("%d/%m/%Y")
+                else:
+                    oldest_positive_date = pd.to_datetime(str(collection_dates[0])).strftime("%d/%m/%Y")
                 covid_status.append("P")
                 covid_date_pos.append(oldest_positive_date)
             # If the patient has no positive results and not all tests are "In Progress", then register as negative
