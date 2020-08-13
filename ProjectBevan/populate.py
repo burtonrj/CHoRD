@@ -663,6 +663,7 @@ class Populate:
                             new_time_name="collection_time")
         df["test_category"] = "CTangio"
         df = _rename(df, additional_mappings={"TEXT": "raw_text"})
+        self._insert(df=df, table_name="Radiology")
         self.vprint("....processing X-ray results")
         df = safe_read(self._get_path("XRChest"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)

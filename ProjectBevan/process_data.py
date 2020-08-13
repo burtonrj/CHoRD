@@ -48,6 +48,15 @@ def clean_complex_text(path: str):
             print(f"Failed at {filename}: {str(e)}")
 
 
+def _read_dataframe(path: str, **kwargs):
+    try:
+        return pd.read_csv(path, **kwargs)
+    except UnicodeError as e:
+        raise UnicodeError(f"Error parsing {path}: {str(e)}")
+    except pd.errors.ParserError as e:
+        raise ValueError(f"Error parsing {path}: {str(e)}")
+
+
 def safe_read(path: str):
     """
     Attempt to read csv file as a Pandas DataFrame. Catches warnings for improved error handling.
@@ -60,19 +69,19 @@ def safe_read(path: str):
     -------
     Pandas.DataFrame
     """
+    encoding = chardet.detect(open(path, "rb").read()).get("encoding")
     try:
-        encoding = chardet.detect(open(path, "rb").read()).get("encoding")
-        return pd.read_csv(path,
-                           engine="python",
-                           escapechar="\\",
-                           quotechar='"',
-                           sep=",",
-                           encoding=encoding,
-                           low_memory=False)
-    except UnicodeError as e:
-        raise UnicodeError(f"Error parsing {path}: {str(e)}")
-    except pd.errors.ParserError as e:
-        raise ValueError(f"Error parsing {path}: {str(e)}")
+        return _read_dataframe(path, encoding=encoding, low_memory=False)
+    except pd.errors.ParserError:
+        try:
+            return _read_dataframe(path,
+                                   engine="python",
+                                   escapechar="\\",
+                                   quotechar='"',
+                                   sep=",",
+                                   encoding=encoding)
+        except pd.errors.ParserError as e:
+            raise ValueError(f"Error parsing {path}: {str(e)}")
 
 
 def _unique_categories(path: str):
