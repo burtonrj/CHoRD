@@ -1,5 +1,6 @@
 from ProjectBevan.utilities import parse_datetime, verbose_print, progress_bar
 from ProjectBevan.schema import create_database
+from ProjectBevan.process_data import safe_read
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from typing import List
@@ -323,7 +324,7 @@ class Populate:
 
         Returns
         -------
-        None
+        str
         """
         return os.path.join(self.data_path, f"{file_basename}.csv")
 
@@ -362,7 +363,7 @@ class Populate:
         self.vprint("---- Populating Pathology Table ----")
         for file in self.path_files:
             self.vprint(f"Processing {file}....")
-            df = pd.read_csv(self._get_path(file), low_memory=False)
+            df = safe_read(self._get_path(file))
             df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
             df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
             df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
@@ -420,7 +421,7 @@ class Populate:
 
         # AsperELISA ----------------------------
         self.vprint("...processing Aspergillus ELISA results")
-        df = pd.read_csv(self._get_path("AsperELISA"), low_memory=False)
+        df = safe_read(self._get_path("AsperELISA"))
         sample_type_pattern = 'Specimen received: ([\w\d\s\(\)\[\]]+) Aspergillus ELISA'
         result_pattern = "Aspergillus Antigen \(Galactomannan\) ([\w\d\s\(\)\[\]]+)"
         self._process_micro_df(df=df,
@@ -429,7 +430,7 @@ class Populate:
                                test_name="AsperELISA")
         # AsperPCR ----------------------------
         self.vprint("...processing Aspergillus PCR results")
-        df = pd.read_csv(self._get_path("AsperPCR"), low_memory=False)
+        df = safe_read(self._get_path("AsperPCR"))
         sample_type_pattern = 'Specimen received: ([\w\d\s\(\)\[\]]+) Aspergillus PCR'
         result_pattern = "PCR\s(DNA\s[Not]*\sDetected)"
         self._process_micro_df(df=df,
@@ -438,7 +439,7 @@ class Populate:
                                test_name="AsperELISA")
         # BCult ------------------------------
         self.vprint("...processing Blood Culture results")
-        df = pd.read_csv(self._get_path("BCult"), low_memory=False)
+        df = safe_read(self._get_path("BCult"))
         sample_type_pattern = 'Specimen received:([\w\s\d\(\)\[\]\-]*)(Culture|Microscopy)'
         result_pattern = "(Culture|Microscopy-)([\w\s\d]*)"
         self._process_micro_df(df=df,
@@ -447,7 +448,7 @@ class Populate:
                                test_name="BloodCulture")
         # BGluc ------------------------------
         self.vprint("...processing Beta-Glucan results")
-        df = pd.read_csv(self._get_path("BGluc"), low_memory=False)
+        df = safe_read(self._get_path("BGluc"))
         sample_type_pattern = 'Specimen received:([\w\s\d\(\)\[\]\-]*) Mycology reference unit'
         result_pattern = "Mycology reference unit Cardiff Beta Glucan Antigen Test :([\w\s\d<>/\.\-]*)"
         self._process_micro_df(df=df,
@@ -456,7 +457,7 @@ class Populate:
                                test_name="BetaGlucan")
         # RESPL ------------------------------
         self.vprint("...processing Respiratory Virus results")
-        df = pd.read_csv(self._get_path("RESPL"), low_memory=False)
+        df = safe_read(self._get_path("RESPL"))
         sample_type_pattern = 'Specimen received:([\w\s\d<>/\.\-]*) (Microbiological ' \
                               'investigation of respiratory viruses|RESPL)'
         result_pattern = "(Microbiological investigation of respiratory viruses|RESPL)([\w\s\d<>/\.\-\(\):]*)"
@@ -466,7 +467,7 @@ class Populate:
                                test_name="RESPL")
         # Covid19 ----------------------------
         self.vprint("...processing Respiratory Virus results")
-        df = pd.read_csv(self._get_path("Covid19"), low_memory=False)
+        df = safe_read(self._get_path("Covid19"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
         df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
         df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
@@ -485,7 +486,7 @@ class Populate:
         """
         self.vprint("---- Populating Comorbid Table ----")
         for file in self.comorbid_files:
-            df = pd.read_csv(self._get_path(file), low_memory=False)
+            df = safe_read(self._get_path(file))
             df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE", "TAKEN_DATE"], axis=1, inplace=True)
             df = _rename(df, additional_mappings={"SOLIDORGANTRANSPLANT": "solid_organ_transplant",
                                                   "CANCER": "cancer",
@@ -510,7 +511,7 @@ class Populate:
         """
         self.vprint("---- Populating ComplexHaematology Table ----")
         for file in progress_bar(self.haem_files, verbose=self.verbose):
-            df = pd.read_csv(self._get_path(file), low_memory=False)
+            df = safe_read(self._get_path(file))
             df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
             df = _get_date_time(df, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
             df = _get_date_time(df, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
@@ -535,7 +536,7 @@ class Populate:
         Pandas.DataFrame
             Modified Pandas DataFrame with covid_status column
         """
-        covid = pd.read_csv(self._get_path("Covid19"), low_memory=False)
+        covid = safe_read(self._get_path("Covid19"))
         covid = _get_date_time(covid, col_name="TEST_DATE", new_date_name="test_date", new_time_name="test_time")
         covid = _get_date_time(covid, col_name="TAKEN_DATE", new_date_name="collection_date", new_time_name="collection_time")
         covid["collection_date"] = pd.to_datetime(covid["collection_date"], format="%d/%m/%Y")
@@ -582,7 +583,7 @@ class Populate:
         Pandas.DataFrame
             Modified Pandas DataFrame with death column
         """
-        events = pd.read_csv(self._get_path("Outcomes"), low_memory=False)[["PATIENT_ID", "DESTINATION"]]
+        events = safe_read(self._get_path("Outcomes"))[["PATIENT_ID", "DESTINATION"]]
         death_status = list()
         for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
             pt_events = events[events.PATIENT_ID == pt_id]
@@ -604,7 +605,7 @@ class Populate:
         """
         self.vprint("---- Populating Patients Table ----")
         self.vprint("...create basic table")
-        df = pd.read_csv(self._get_path("People"), low_memory=False)
+        df = safe_read(self._get_path("People"))
         df = df[df.TEST_PATIENT == "N"]
         df.drop("TEST_PATIENT", axis=1, inplace=True)
         df = _get_date_time(df, col_name="DATE_FROM", new_date_name="date_from", new_time_name="time_from")
@@ -628,8 +629,8 @@ class Populate:
         None
         """
         self.vprint("---- Populating Critical Care Table ----")
-        df = pd.read_csv(self._get_path("CritCare"), low_memory=False)
-        df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE"], axis=1, inplace=True)
+        df = safe_read(self._get_path("CritCare"))
+        df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE", "TAKEN_DATE"], axis=1, inplace=True)
         df = _get_date_time(df, col_name="UNIT_ADMIT_DATE",
                             new_date_name="unit_admit_date",
                             new_time_name="unit_admit_time")
@@ -652,23 +653,23 @@ class Populate:
         """
         self.vprint("---- Populate Radiology Table ----")
         self.vprint("....processing CT Angiogram pulmonary results")
-        df = pd.read_csv(self._get_path("CTangio"), low_memory=False)
+        df = safe_read(self._get_path("CTangio"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
         df = _get_date_time(df, col_name="TEST_DATE",
                             new_date_name="test_date",
                             new_time_name="test_time")
-        df = _get_date_time(df, col_name="TAKED_DATE",
+        df = _get_date_time(df, col_name="TAKEN_DATE",
                             new_date_name="collection_date",
                             new_time_name="collection_time")
         df["test_category"] = "CTangio"
         df = _rename(df, additional_mappings={"TEXT": "raw_text"})
         self.vprint("....processing X-ray results")
-        df = pd.read_csv(self._get_path("XRChest"), low_memory=False)
+        df = safe_read(self._get_path("XRChest"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
         df = _get_date_time(df, col_name="TEST_DATE",
                             new_date_name="test_date",
                             new_time_name="test_time")
-        df = _get_date_time(df, col_name="TAKED_DATE",
+        df = _get_date_time(df, col_name="TAKEN_DATE",
                             new_date_name="collection_date",
                             new_time_name="collection_time")
         df["test_category"] = "XRChest"
@@ -684,7 +685,7 @@ class Populate:
         None
         """
         self.vprint("---- Populate Events Table ----")
-        df = pd.read_csv(self._get_path("Outcomes"), low_memory=False)
+        df = safe_read(self._get_path("Outcomes"))
         df.drop(["WIMD", "GENDER"], axis=1, inplace=True)
         df = _get_date_time(df, col_name="EVENT_DATE",
                             new_date_name="event_date",

@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import pandas as pd
+import chardet
 import os
 import csv
 
@@ -47,7 +48,7 @@ def clean_complex_text(path: str):
             print(f"Failed at {filename}: {str(e)}")
 
 
-def _safe_read(path: str):
+def safe_read(path: str):
     """
     Attempt to read csv file as a Pandas DataFrame. Catches warnings for improved error handling.
 
@@ -60,11 +61,14 @@ def _safe_read(path: str):
     Pandas.DataFrame
     """
     try:
+        encoding = chardet.detect(open(path, "rb").read()).get("encoding")
         return pd.read_csv(path,
                            engine="python",
                            escapechar="\\",
                            quotechar='"',
-                           sep=",")
+                           sep=",",
+                           encoding=encoding,
+                           low_memory=False)
     except UnicodeError as e:
         raise UnicodeError(f"Error parsing {path}: {str(e)}")
     except pd.errors.ParserError as e:
@@ -110,6 +114,6 @@ def consolidate(read_path: str,
     files = [f for f in os.listdir(read_path) if os.path.isfile(os.path.join(read_path, f))]
     categories = {k: [f for f in files if f.split("-")[0] == k] for k in categories}
     for k, files in tqdm(categories.items()):
-        dataframes = [_safe_read(os.path.join(read_path, f)) for f in files]
+        dataframes = [safe_read(os.path.join(read_path, f)) for f in files]
         dataframes = pd.concat(dataframes)
         dataframes.to_csv(os.path.join(write_path, f"{k}.csv"), index=False)
