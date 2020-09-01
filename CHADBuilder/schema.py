@@ -45,10 +45,8 @@ def _schema():
             CREATE TABLE Pathology(
             patient_id TEXT,
             request_location TEXT,
-            test_date TEXT,
-            test_time REAL,
-            collection_date TEXT,
-            collection_time REAL,
+            test_datetime TEXT,
+            collection_datetime TEXT,
             test_name TEXT,
             test_category TEXT,
             test_result TEXT,
@@ -59,10 +57,8 @@ def _schema():
             CREATE TABLE Microbiology(
             patient_id TEXT,
             request_location TEXT,
-            test_date TEXT,
-            test_time REAL,
-            collection_date TEXT,
-            collection_time REAL,
+            test_datetime TEXT,
+            collection_datetime TEXT,
             test_name TEXT,
             test_result TEXT,
             raw_text TEXT,
@@ -74,10 +70,8 @@ def _schema():
                 CREATE TABLE ComplexHaematology(
                 patient_id TEXT,
                 request_location TEXT,
-                test_date TEXT,
-                test_time REAL,
-                collection_date TEXT,
-                collection_time REAL,
+                test_datetime TEXT,
+                collection_datetime TEXT,
                 test_name TEXT,
                 test_category TEXT,
                 test_result TEXT,
@@ -90,10 +84,8 @@ def _schema():
             CREATE TABLE Radiology(
             patient_id TEXT,
             request_location TEXT,
-            test_date TEXT,
-            test_time REAL,
-            collection_date TEXT,
-            collection_time REAL,
+            test_datetime TEXT,
+            collection_datetime TEXT,
             test_category TEXT,
             raw_text TEXT,
             valid INTEGER DEFAULT 1
@@ -104,8 +96,7 @@ def _schema():
             patient_id TEXT,
             component TEXT,
             event_type TEXT NOT NULL,
-            event_date TEXT NOT NULL,
-            event_time REAL,
+            event_datetime TEXT NOT NULL,
             covid_status TEXT DEFAULT "U",
             death TEXT DEFAULT "U",
             critical_care INTEGER DEFAULT 0,
@@ -118,15 +109,19 @@ def _schema():
             CREATE TABLE CritCare(
             patient_id TEXT,
             location TEXT,
-            unit_admit_date TEXT,
-            unit_admit_time REAL,
-            unit_discharge_date TEXT,
-            unit_discharge_time REAL,
+            unit_admit_datetime TEXT,
+            unit_discharge_datetime TEXT,
             icu_length_of_stay INTEGER,
             ventilated INTEGER,
             covid_status TEXT DEFAULT "U"
             );
         """
+    units = """
+            CREATE TABLE Units(
+            test_name TEXT,
+            reported_units TEXT
+            );
+    """
     return [patients,
             event,
             critical_care,
@@ -134,7 +129,8 @@ def _schema():
             radiology,
             path,
             micro,
-            haem]
+            haem,
+            units]
 
 
 def create_database(db_path: str,

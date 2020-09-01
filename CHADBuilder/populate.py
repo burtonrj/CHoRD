@@ -2,6 +2,7 @@ from CHADBuilder.utilities import parse_datetime, verbose_print, progress_bar
 from CHADBuilder.schema import create_database
 from CHADBuilder.process_data import safe_read
 from multiprocessing import Pool, cpu_count
+from functools import partial
 from tqdm import tqdm
 from typing import List
 import sqlite3 as sql
@@ -83,30 +84,41 @@ def _rename(df: pd.DataFrame,
     return df
 
 
-def _get_date_time(df: pd.DataFrame,
-                   col_name: str) -> pd.DataFrame:
+def search_covid_results(patient_id: str,
+                         covid_df: pd.DataFrame):
     """
-    Given a DataFrame and a target column (col_name) containing a string with date and/or time content, using
-    multiprocessing and the parse_datetime function, generate a new column for dates and a new column for times.
-    Original target column will be dropped and modified DataFrame returned.
+    Given a patient ID and a dataframe of COVID-19 PCR results, return whether a patient had
+    a positive result at any point and the date of their first positive. If no positives but
+    negative results exist, return "N" for negative, otherwise "U" for unknown.
 
     Parameters
     ----------
-    df: Pandas.DataFrame
-    col_name: str
-        Target column
-    new_date_name: str
-        New column name for dates
-    new_time_name: str
-        New column name for times
+    patient_id: str
+        Patient ID
+    covid_df: Pandas.DataFrame
+        COVID-19 PCR results
 
     Returns
     -------
-    Pandas.DataFrame
+    str, str or None
     """
-    with Pool(cpu_count()) as pool:
-        df[col_name] = pool.map(parse_datetime, df[col_name].values)
-    return df
+    pt_status = covid_df[covid_df.PATIENT_ID == patient_id].sort_values("collection_datetime", ascending=True).copy()
+    positives = pt_status[pt_status.TEXT == "Positive"].copy()
+    for x in ["collection_datetime", "test_datetime"]:
+        positives[x] = positives[x].dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    if pt_status.shape[0] == 0:
+        return "U", None
+    if positives.shape[0] != 0:
+        first_positive = positives.iloc[0]
+        if pd.isnull(first_positive.collection_datetime):
+            if pd.isnull(first_positive.test_datetime):
+                return "P", None
+            return "P", first_positive.test_datetime
+        return "P", first_positive.collection_datetime
+    negatives = pt_status[pt_status.TEXT == "Negative"]
+    if negatives.shape[0] != 0:
+        return "N", None
+    return "U", None
 
 
 class Populate:
@@ -198,7 +210,8 @@ class Populate:
                  haem_files: List[str] or None = None,
                  critcare_files: List[str] or None = None,
                  radiology_files: List[str] or None = None,
-                 events_files: List[str] or None = None):
+                 events_files: List[str] or None = None,
+                 units_files: List[str] or None = None):
         self.verbose = verbose
         self.vprint = verbose_print(verbose)
         create_database(database_path, overwrite=True)
@@ -214,6 +227,7 @@ class Populate:
         self.critcare_files = critcare_files
         self.radiology_files = radiology_files
         self.events_files = events_files
+        self.units_files = units_files
         if self.path_files is None:
             self.path_files = ["LFT",
                                "ABG",
@@ -268,6 +282,8 @@ class Populate:
                                 'Died In Dept.',
                                 'Died - USUAL PLACE OF RESIDENCE',
                                 'Died - NHS HOSP OTHER PROV - GENERAL']
+        if self.units_files is None:
+            self.units_files = ["TestUnits"]
         self._all_files_present()
 
     def _all_files_present(self) -> None:
@@ -301,6 +317,35 @@ class Populate:
         str
         """
         return os.path.join(self.data_path, f"{file_basename}.csv")
+
+    def _get_date_time(self,
+                       df: pd.DataFrame,
+                       col_name: str) -> pd.DataFrame:
+        """
+        Given a DataFrame and a target column (col_name) containing a string with date and/or time content, using
+        multiprocessing and the parse_datetime function, generate a new column for dates and a new column for times.
+        Original target column will be dropped and modified DataFrame returned.
+
+        Parameters
+        ----------
+        df: Pandas.DataFrame
+        col_name: str
+            Target column
+        new_date_name: str
+            New column name for dates
+        new_time_name: str
+            New column name for times
+
+        Returns
+        -------
+        Pandas.DataFrame
+        """
+        with Pool(cpu_count()) as pool:
+            if self.verbose:
+                df[col_name] = tqdm(pool.imap(parse_datetime, df[col_name].values), total=len(df[col_name].values))
+            else:
+                df[col_name] = pool.map(parse_datetime, df[col_name].values)
+        return df
 
     def _insert(self,
                 df: pd.DataFrame,
@@ -339,15 +384,15 @@ class Populate:
             self.vprint(f"Processing {file}....")
             df = safe_read(self._get_path(file))
             df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-            df = _get_date_time(df, col_name="TEST_DATE")
-            df = _get_date_time(df, col_name="TAKEN_DATE")
-            df = df.melt(id_vars=["PATIENT_ID", "REQUEST_LOCATION", "test_date", "test_time", "collection_date", "collection_time"],
+            df = self._get_date_time(df, col_name="TEST_DATE")
+            df = self._get_date_time(df, col_name="TAKEN_DATE")
+            df = df.melt(id_vars=["PATIENT_ID", "REQUEST_LOCATION", "TEST_DATE", "TAKEN_DATE"],
                          var_name="test_name",
                          value_name="test_result")
             df["valid"] = df.test_result.apply(lambda x: int(x != "Issue with result"))
             df["test_category"] = file
             df = _rename(df, {"TEST_DATE": "test_datetime",
-                              "TAKEN_DATE": "taken_datetime"})
+                              "TAKEN_DATE": "collection_datetime"})
             self._insert(df=df, table_name="Pathology")
 
     def _process_micro_df(self,
@@ -373,8 +418,8 @@ class Populate:
         None
         """
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df, col_name="TEST_DATE")
-        df = _get_date_time(df, col_name="TAKEN_DATE")
+        df = self._get_date_time(df, col_name="TEST_DATE")
+        df = self._get_date_time(df, col_name="TAKEN_DATE")
         # pull out the sample type
         df["sample_type"] = df.TEXT.apply(lambda x: _re_search_df(pattern=sample_type_pattern, x=x, group_idx=0))
         # Pull out result
@@ -444,8 +489,8 @@ class Populate:
         self.vprint("...processing Respiratory Virus results")
         df = safe_read(self._get_path("Covid19"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df, col_name="TEST_DATE")
-        df = _get_date_time(df, col_name="TAKEN_DATE")
+        df = self._get_date_time(df, col_name="TEST_DATE")
+        df = self._get_date_time(df, col_name="TAKEN_DATE")
         df = _rename(df, additional_mappings={"TEXT": "test_result", "TEST_DATE": "test_datetime", "TAKEN_DATE": "collection_datetime"})
         df["valid"] = df.test_result.apply(lambda x: int(x != "Issue with result"))
         df["test_name"] = "Covid19-PCR"
@@ -488,8 +533,8 @@ class Populate:
         for file in progress_bar(self.haem_files, verbose=self.verbose):
             df = safe_read(self._get_path(file))
             df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-            df = _get_date_time(df, col_name="TEST_DATE")
-            df = _get_date_time(df, col_name="TAKEN_DATE")
+            df = self._get_date_time(df, col_name="TEST_DATE")
+            df = self._get_date_time(df, col_name="TAKEN_DATE")
             # pull out the sample type
             df["test_name"] = None
             df["test_result"] = None
@@ -512,40 +557,20 @@ class Populate:
             Modified Pandas DataFrame with covid_status column
         """
         covid = safe_read(self._get_path("Covid19"))
-        covid = _get_date_time(covid, col_name="TEST_DATE")
-        covid = _get_date_time(covid, col_name="TAKEN_DATE")
+        covid = self._get_date_time(covid, col_name="TEST_DATE")
+        covid = self._get_date_time(covid, col_name="TAKEN_DATE")
         covid = covid.rename({"TEST_DATE": "test_datetime", "TAKEN_DATE": "collection_datetime"}, axis=1)
         covid["collection_datetime"] = pd.to_datetime(covid["collection_datetime"])
         covid["test_datetime"] = pd.to_datetime(covid["collection_datetime"])
         covid_status = list()
-        covid_date_pos = list()
-        for pt_id in progress_bar(df.patient_id.unique(), verbose=self.verbose):
-            pt_status = covid[covid.PATIENT_ID == pt_id].sort_values("collection_datetime", ascending=True)
-            # No results, status is unknown
-            if pt_status.shape[0] == 0:
-                covid_status.append("U")
-                covid_date_pos.append(None)
-                continue
-            # If the patient was positive at any point,
-            if any([x == "Positive" for x in pt_status.TEXT]):
-                positives = pt_status[pt_status.TEXT == "Positive"]
-                collection_dates = [x for x in positives.collection_datetime.values if not pd.isnull(x)]
-                if not collection_dates:
-                    oldest_positive_date = positives.test_datetime.values[0].strftime("%Y-%m-%dT%H:%M:%SZ")
-                else:
-                    oldest_positive_date = positives.collection_datetime.values[0].strftime("%Y-%m-%dT%H:%M:%SZ")
-                covid_status.append("P")
-                covid_date_pos.append(oldest_positive_date)
-            # If the patient has no positive results and not all tests are "In Progress", then register as negative
-            elif all([x != "Positive" for x in pt_status]) and not all([x == "In Progress" for x in pt_status]):
-                covid_status.append("N")
-                covid_date_pos.append(None)
-            else:
-                # Otherwise status is unknown i.e. they are all "In Progress" with no "Positive" results
-                covid_status.append("U")
-                covid_date_pos.append(None)
-        df["covid_status"] = covid_status
-        df["covid_date_first_positive"] = covid_date_pos
+        if self.verbose:
+            patient_ids = tqdm(df.patient_id.values)
+        else:
+            patient_ids = df.patient_id.values
+        for pt_id in patient_ids:
+            covid_status.append(search_covid_results(patient_id=pt_id, covid_df=covid))
+        df["covid_status"] = [x[0] for x in covid_status]
+        df["covid_date_first_positive"] = [x[1] for x in covid_status]
         return df
 
     def _register_death(self, df: pd.DataFrame):
@@ -585,8 +610,8 @@ class Populate:
         df = safe_read(self._get_path("People"))
         df = df[df.TEST_PATIENT == "N"]
         df.drop("TEST_PATIENT", axis=1, inplace=True)
-        df = _get_date_time(df, col_name="DATE_FROM")
-        df = _get_date_time(df, col_name="DATE_ENTERED")
+        df = self._get_date_time(df, col_name="DATE_FROM")
+        df = self._get_date_time(df, col_name="DATE_ENTERED")
         df = df.rename({"PATIENT_ID": "patient_id",
                         "AGE": "age",
                         "GENDER": "gender",
@@ -610,14 +635,14 @@ class Populate:
         self.vprint("---- Populating Critical Care Table ----")
         df = safe_read(self._get_path("CritCare"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE", "TAKEN_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df, col_name="UNIT_ADMIT_DATE")
-        df = _get_date_time(df, col_name="UNIT_DISCH_DATE")
+        df = self._get_date_time(df, col_name="UNIT_ADMIT_DATE")
+        df = self._get_date_time(df, col_name="UNIT_DISCH_DATE")
         df = _rename(df, {"request_location": "location",
                           "ICU_DAY": "icu_length_of_stay",
                           "VENTILATOR": "ventilated",
                           "COVID19_STATUS": "covid_status",
-                          "UNIT_ADMIT_DATE": "unit_admit_date",
-                          "UNIT_DISCH_DATE": "unit_disch_date"})
+                          "UNIT_ADMIT_DATE": "unit_admit_datetime",
+                          "UNIT_DISCH_DATE": "unit_discharge_datetime"})
         self._insert(df=df, table_name="CritCare")
 
     def _radiology(self):
@@ -632,16 +657,16 @@ class Populate:
         self.vprint("....processing CT Angiogram pulmonary results")
         df = safe_read(self._get_path("CTangio"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df, col_name="TEST_DATE")
-        df = _get_date_time(df, col_name="TAKEN_DATE")
+        df = self._get_date_time(df, col_name="TEST_DATE")
+        df = self._get_date_time(df, col_name="TAKEN_DATE")
         df["test_category"] = "CTangio"
         df = _rename(df, additional_mappings={"TEXT": "raw_text", "TEST_DATE": "test_datetime", "TAKEN_DATE": "collection_datetime"})
         self._insert(df=df, table_name="Radiology")
         self.vprint("....processing X-ray results")
         df = safe_read(self._get_path("XRChest"))
         df.drop(["AGE", "GENDER", "ADMISSION_DATE"], axis=1, inplace=True)
-        df = _get_date_time(df, col_name="TEST_DATE")
-        df = _get_date_time(df, col_name="TAKEN_DATE")
+        df = self._get_date_time(df, col_name="TEST_DATE")
+        df = self._get_date_time(df, col_name="TAKEN_DATE")
         df["test_category"] = "XRChest"
         df = _rename(df, additional_mappings={"TEXT": "raw_text", "TEST_DATE": "test_datetime", "TAKEN_DATE": "collection_datetime"})
         self._insert(df=df, table_name="Radiology")
@@ -655,9 +680,9 @@ class Populate:
         None
         """
         self.vprint("---- Populate Events Table ----")
-        df = safe_read(self._get_path("Outcomes"))
+        df = safe_read(self._get_path(self.events_files[0]))
         df.drop(["WIMD", "GENDER"], axis=1, inplace=True)
-        df = _get_date_time(df, col_name="EVENT_DATE")
+        df = self._get_date_time(df, col_name="EVENT_DATE")
         df["death"] = df.DESTINATION.apply(lambda x: int(any([i in str(x) for i in self.died_events])))
         df = df.rename({"PATIENT_ID": "patient_id",
                         "COMPONENT": "component",
@@ -669,6 +694,11 @@ class Populate:
                         "CRITICAL_CARE": "critical_care",
                         "EVENT_DATE": "event_datetime"}, axis=1)
         self._insert(df=df, table_name="Events")
+
+    def _test_units(self):
+        self.vprint("---- Populate Units Table ----")
+        df = safe_read(self._get_path("TestUnits"))
+        self._insert(df=df, table_name="Units")
 
     def populate(self):
         """
@@ -688,6 +718,7 @@ class Populate:
         self._radiology()
         self._critical_care()
         self._haem()
+        self._test_units()
         self.vprint("\n")
         self.vprint("Complete!....")
         self.vprint("====================================================")

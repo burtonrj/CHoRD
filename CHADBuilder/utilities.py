@@ -67,7 +67,6 @@ def parse_datetime(datetime: str or None) -> dict or None:
          ISO 8601 formatted string: YYYY-MM-DD hh:mm:ss e.g. 2020-09-01T13:35:37Z
     """
     if type(datetime) is not str:
-        warn(f"Passed a non-string value to parse_datetime: {datetime}. Returning Null")
         return None
     datetime = datetime.strip()
     datetime = dateparser.parse(datetime, locales=["en-GB"])
