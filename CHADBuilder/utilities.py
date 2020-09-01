@@ -51,9 +51,9 @@ def progress_bar(x: iter or None = None,
     return tqdm(x, **kwargs)
 
 
-def parse_datetime(datetime: str or None) -> dict:
+def parse_datetime(datetime: str or None) -> dict or None:
     """
-    Takes a datetime as string and returns a dictionary of parsed date and time. Implements the dateparser
+    Takes a datetime as string and returns a ISO 8601 standard datetime string. Implements the dateparser
     library for flexible date time parsing (https://dateparser.readthedocs.io/). Assumes GB formatting for
     dates i.e. Day/Month/Year (can handle multiple dividers for date e.g. ".", "/", "-" etc)
 
@@ -63,25 +63,17 @@ def parse_datetime(datetime: str or None) -> dict:
         datetime string to parse, can be date, or date and time.
     Returns
     -------
-    dict
-         {"date": None (if invalid datetime string) or string ("%day/%month/%year)
-         "time": float (minutes passed for given date) or None (if no time value present in parsed string)}
+    dict or None
+         ISO 8601 formatted string: YYYY-MM-DD hh:mm:ss e.g. 2020-09-01T13:35:37Z
     """
-    result = dict()
     if type(datetime) is not str:
         warn(f"Passed a non-string value to parse_datetime: {datetime}. Returning Null")
-        return {"date": None, "time": None}
+        return None
     datetime = datetime.strip()
-    pattern = "^[0-9]{1,2}[/.-][0-9]{1,2}[/.-]([0-9]{2}|[0-9]{4})$"
-    if re.match(pattern, datetime):
-        result["time"] = None
     datetime = dateparser.parse(datetime, locales=["en-GB"])
     if datetime is None:
-        return {"date": None, "time": None}
-    result["date"] = f"{datetime.day}/{datetime.month}/{datetime.year}"
-    if "time" not in result.keys():
-        result["time"] = (datetime.hour * 60) + datetime.minute
-    return result
+        return None
+    return datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def verbose_print(verbose: bool):
