@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='ProjectBevan',
+    name='CHADBuilder',
     version='v0.1',
     packages=[''],
     url='',

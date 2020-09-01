@@ -1,6 +1,6 @@
-from ProjectBevan.utilities import parse_datetime, verbose_print, progress_bar
-from ProjectBevan.schema import create_database
-from ProjectBevan.process_data import safe_read
+from CHADBuilder.utilities import parse_datetime, verbose_print, progress_bar
+from CHADBuilder.schema import create_database
+from CHADBuilder.process_data import safe_read
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from typing import List
@@ -137,15 +137,15 @@ def _get_date_time(df: pd.DataFrame,
 
 class Populate:
     """
-    Create the ProjectBevan database and populate using C&V data extracts.
+    Create the CHADBuilder database and populate using C&V data extracts.
 
     Parameters
     -----------
     database_path: str
-        Location of the ProjectBevan database. NOTE: the database is READ ONLY and so a new database
+        Location of the CHADBuilder database. NOTE: the database is READ ONLY and so a new database
         will always be generated at the path given.
     data_path: str
-        Location of the consolidated C&V data extracts (see ProjectBevan.process_data)
+        Location of the consolidated C&V data extracts (see CHADBuilder.process_data)
     verbose: bool, (default=True)
         If True, print regular feedback
     died_events: list or None,
@@ -332,7 +332,7 @@ class Populate:
                 df: pd.DataFrame,
                 table_name: str):
         """
-        Given a DataFrame and some target table in the ProjectBevan database, append the contents of that
+        Given a DataFrame and some target table in the CHADBuilder database, append the contents of that
         DataFrame into the target table, whilst also providing a progress bar is verbose set to True.
 
         Parameters
