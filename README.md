@@ -1,12 +1,11 @@
 ![](header.svg)
 
-CHADBuilder (part of the 'In Data We Trust' project)
-=======================================================
+CHADBuilder
+============
 
-CHADBuilder is a database detailing the hospital events, pathology and radiology of patients 
-admitted to Cardiff & Vale Health Board in Wales, UK during the COVID-19 outbreak. This is part
-of the "In Data We Trust" project led by [Dr Mark Ponsford](https://www.cardiff.ac.uk/people/view/1245689-Ponsford-Mark) 
-at Cardiff University. Data extraction was performed by Leitchan Smith (C&V IT) and [Ross Burton](https://www.linkedin.com/in/burtonbiomedical/?originalSubdomain=uk).
+CHADBuilder is a Python package for generating CHAD, a database detailing the hospital events, pathology and radiology of patients 
+admitted to Cardiff & Vale Health Board in Wales, UK during the COVID-19 outbreak. This project is led by [Dr Mark Ponsford](https://www.cardiff.ac.uk/people/view/1245689-Ponsford-Mark) and [Ross Burton](https://www.linkedin.com/in/burtonbiomedical/?originalSubdomain=uk) 
+at [Cardiff University Infection and Immunity Research Institute](https://www.cardiff.ac.uk/medicine/research/divisions/infection-and-immunity). Data extraction was performed by Leitchan Smith (C&V IT) and [Ross Burton](https://www.linkedin.com/in/burtonbiomedical/?originalSubdomain=uk), with contributions from Dr Robert Andreas.
 The CHADBuilder source code and SQLite database was created by Ross Burton.
 
 CHADBuilder version 0.1 is an SQLite database, with anticipation to generate a NoSQL MongoDB instance 
