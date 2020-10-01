@@ -9,9 +9,9 @@ setup(
     author='Ross Burton',
     author_email='burtonrj@cardiff.ac.uk',
     description='',
-    install_requires=['pandas==1.0.5',
+    install_requires=['pandas==1.1.1',
                       'requests==2.24.0',
-                      'tqdm==4.47.0',
+                      'tqdm==4.49.0',
                       'dateparser==0.7.6',
-                      'IPython==7.16.1']
+                      'IPython==7.18.1']
 )

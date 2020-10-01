@@ -1,9 +1,7 @@
 from IPython import get_ipython
-from warnings import warn
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
 import dateparser
-import re
 
 
 def which_environment() -> str:
