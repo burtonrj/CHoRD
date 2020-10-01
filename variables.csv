@@ -1,0 +1,95 @@
+Table,Category,Variable name ,Description,Oldest record (YYYY-MM-DD),Unique patient count
+Pathology,ABG,ABG,ABO blood typing,2001-07-22,51726
+Pathology,ABG,RHD,Rhesus blood typing,2001-07-22,51726
+Pathology,ABG,SCR,,2001-07-22,51726
+Pathology,ACE,ACE,Angiotensin converting enzyme,2020-01-02,438
+Pathology,AntiXa,Anti-factor Xa activity level,Heparin assay,2020-01-02,197
+Pathology,BgaPOCT,Base excess ecf [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Calcium (ionised) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Carboxyhaemoglobin [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Chloride [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Glucose [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Inspired oxygen [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Lactate [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Methaemoglobin [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Potassium [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,So2 (Arterial) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Sodium [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Standard bicarbonate (Arterial) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Temperature [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,Total Hb (calculated) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,pCO2 (Arterial) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,pH (Arterial) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,BgaPOCT,pO2 (Arterial) [POCT],Blood gas analyser; point of care testing,2020-01-01,4455
+Pathology,CoagScr,APTT,Activated partial thromboplastin time,2020-01-01,21218
+Pathology,CoagScr,Clauss fibrinogen level,,2020-01-01,21218
+Pathology,CoagScr,Prothrombin time (PT),,2020-01-01,21218
+Pathology,Covid19Ab,Covid19Ab,IgG antibody assay,2020-05-06,1049
+Pathology,CRP,C-reactive protein (CRP),,2020-01-01,44680
+Pathology,Ddimer,D-dimer,,2020-02-21,3418
+Pathology,EPS,Albumin,,2020-01-01,78584
+Pathology,EPS,Globulin,,2020-01-01,78584
+Pathology,EPS,Protein,,2020-01-01,78584
+Pathology,FBC,Basophil count,,2020-01-01,92924
+Pathology,FBC,Eosinophil count,,2020-01-01,92924
+Pathology,FBC,Haematocrit (Hct),,2020-01-01,92924
+Pathology,FBC,Haemoglobin (Hb),,2020-01-01,92924
+Pathology,FBC,Lymphocyte count,,2020-01-01,92924
+Pathology,FBC,Mean cell haemoglobin (MCH),,2020-01-01,92924
+Pathology,FBC,Mean cell volume (MCV),,2020-01-01,92924
+Pathology,FBC,Monocyte count,,2020-01-01,92924
+Pathology,FBC,Neutrophil count,,2020-01-01,92924
+Pathology,FBC,Nucleated red blood cell (NRBC) count,,2020-01-01,92924
+Pathology,FBC,Platelet (PLT) count,,2020-01-01,92924
+Pathology,FBC,Red blood cell (RBC) count,,2020-01-01,92924
+Pathology,FBC,Red cell distribution width (RDW),,2020-01-01,92924
+Pathology,FBC,White blood cell (WBC) count,,2020-01-01,92924
+Pathology,Ferritin,Ferritin,,2020-01-01,30462
+Pathology,GlucoseRand,Glucose (Random),,2020-01-01,17605
+Pathology,HbA1c,HbA1c  (IFCC traceable),,2019-01-02,59725
+Pathology,HsTrop,High Sensitivity Troponin I,,2020-01-01,7500
+Pathology,ImmGlob,IgA,,2019-01-02,9305
+Pathology,ImmGlob,IgG,,2019-01-02,9305
+Pathology,ImmGlob,IgM,,2019-01-02,9305
+Pathology,LDH,Lactate dehydrogenase,,2020-01-01,3773
+Pathology,LFT,Alanine transaminase,,2020-01-01,78020
+Pathology,LFT,Albumin,,2020-01-01,78584
+Pathology,LFT,Alkaline phosphatase,,2020-01-01,78020
+Pathology,LFT,Bilirubin,,2020-01-01,78020
+Pathology,LFT,Globulin,,2020-01-01,78584
+Pathology,LFT,Protein,,2020-01-01,78584
+Pathology,Lip,Cholesterol,,2018-01-01,57698
+Pathology,Lip,Cholesterol:HDL ratio,,2018-01-01,57698
+Pathology,Lip,HDL Cholesterol,,2018-01-01,57698
+Pathology,Lip,LDL Cholesterol,,2018-01-01,57698
+Pathology,Lip,Non HDL Cholesterol,,2018-01-01,57698
+Pathology,Lip,Triglyceride,,2018-01-01,57698
+Pathology,LipF,Cholesterol,,2018-01-01,57698
+Pathology,LipF,Cholesterol:HDL ratio,,2018-01-01,57698
+Pathology,LipF,HDL Cholesterol,,2018-01-01,57698
+Pathology,LipF,LDL Cholesterol,,2018-01-01,57698
+Pathology,LipF,Non HDL Cholesterol,,2018-01-01,57698
+Pathology,LipF,Triglyceride,,2018-01-01,57698
+Pathology,ParaProt,Paraprotein Band 1 Level,,2019-01-31,1174
+Pathology,ParaProt,Paraprotein Band 2 Level,,2019-01-31,1174
+Pathology,ParaProt,Paraprotein Band 3 Level,,2019-01-31,1174
+Pathology,ProCalc,Procalcitonin,,2020-01-20,2358
+Pathology,TCC,Terminal Complement Complex (TCC),,2020-04-11,44
+Pathology,TFSat,% Saturation,Serum transferrin saturation,2018-01-02,4682
+Pathology,TFSat,Iron,,2018-01-02,4682
+Pathology,TFSat,TIBC,Total iron-binding capacity,2018-01-02,4682
+Pathology,UandE,Creatinine,,2020-01-01,91052
+Pathology,UandE,Estimated GFR,,2020-01-01,91052
+Pathology,UandE,Potassium,,2020-01-01,91052
+Pathology,UandE,Sodium,,2020-01-01,91052
+Pathology,UandE,Urea,,2020-01-01,91052
+Pathology,VitD,25OH vitamin D,,2019-01-03,17675
+Microbiology,,AsperELISA,Aspergillus ELISA,2020-01-01,488
+Microbiology,,BetaGlucan,β-d-Glucan antigen test,2020-01-02,361
+Microbiology,,BloodCulture,,2020-01-01,5354
+Microbiology,,Covid19-PCR,SARS-CoV-2 PCR swab result,2020-02-04,26627
+Microbiology,,RESPL,Respiratory virus panel (including influenza A & B),2019-01-02,8559
+Radiology,Ctangio,,CT Angiogram,2020-01-10,873
+Radiology,XRChest,,Chest X-ray,2019-12-21,13740
+ComplexHaematology,CompAlt,,Alternative complement pathway analysis,2020-01-03,75
+ComplexHaematology,CompClass,,Classical complement pathway analysis,2020-01-03,76

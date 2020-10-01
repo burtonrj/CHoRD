@@ -1,7 +1,5 @@
 env
 data
-data/consolidated
-*.csv
 *.xls
 *.xlsx
 *.db

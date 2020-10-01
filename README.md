@@ -9,7 +9,9 @@ at [Cardiff University Infection and Immunity Research Institute](https://www.ca
 The CHADBuilder source code and SQLite database was created by Ross Burton.
 
 CHADBuilder version 0.1 is an SQLite database, with anticipation to generate a NoSQL MongoDB instance 
-in future releases once public data sharing has been approved. The SQLite schema can be found in schema.pdf
+in future releases once public data sharing has been approved. A detailed list of included variables can be found in 
+`variables.csv`. For additional queries and assistance navigating this package and the database schema, please 
+contact Ross Burton; burtonrj@cardiff.ac.uk
 
 The code presented in this repository is licensed under the MIT open source license.
 
