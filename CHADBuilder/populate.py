@@ -634,15 +634,24 @@ class Populate:
         """
         self.vprint("---- Populating Critical Care Table ----")
         df = safe_read(self._get_path("CritCare"))
-        df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE", "TAKEN_DATE"], axis=1, inplace=True)
         df = self._get_date_time(df, col_name="UNIT_ADMIT_DATE")
         df = self._get_date_time(df, col_name="UNIT_DISCH_DATE")
         df = _rename(df, {"request_location": "location",
-                          "ICU_DAY": "icu_length_of_stay",
+                          "UNIT": "unit",
+                          "UNIT_OUTCOME": "unit_outcome",
+                          "HOSP_OUTCOME": "hospital_outcome",
                           "VENTILATOR": "ventilated",
                           "COVID19_STATUS": "covid_status",
                           "UNIT_ADMIT_DATE": "unit_admit_datetime",
-                          "UNIT_DISCH_DATE": "unit_discharge_datetime"})
+                          "UNIT_DISCH_DATE": "unit_discharge_datetime",
+                          "HEIGHT": "height",
+                          "WEIGHT": "weight",
+                          "AP2": "apache2_score",
+                          "ETHNICITY": "ethnicity",
+                          "RENALRT": "renal_treatment",
+                          "MECHANICALVENTILATION": "ventilated",
+                          "DAYSVENTILATED": "ventilated_days",
+                          "RADIOTHERAPY": "radiotherapy"})
         self._insert(df=df, table_name="CritCare")
 
     def _radiology(self):

@@ -108,12 +108,22 @@ def _schema():
     critical_care = """
             CREATE TABLE CritCare(
             patient_id TEXT,
+            unit TEXT,
+            unit_outcome TEXT,
+            hospital_outcome TEXT,
+            height INTEGER,
+            weight INTEGER,
+            apache2_score INTEGER,
+            ethnicity TEXT,
+            renal_treatment INTEGER,
+            radiotherapy INTEGER,
             location TEXT,
             unit_admit_datetime TEXT,
             unit_discharge_datetime TEXT,
             icu_length_of_stay INTEGER,
             ventilated INTEGER,
-            covid_status TEXT DEFAULT "U"
+            ventilated_days INTEGER,
+            covid_status INTERGET DEFAULT 0
             );
         """
     units = """
