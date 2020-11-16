@@ -28,7 +28,8 @@ def _schema():
     """
     comorbid = """
             CREATE TABLE Comorbid(
-            patient_id TEXT PRIMARY KEY,
+            patient_id TEXT,
+            datetime TEXT,
             solid_organ_transplant INTEGER,
             cancer INTEGER,
             severe_resp INTEGER,

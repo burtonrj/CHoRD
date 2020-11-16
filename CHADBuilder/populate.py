@@ -507,7 +507,7 @@ class Populate:
         self.vprint("---- Populating Comorbid Table ----")
         for file in self.comorbid_files:
             df = safe_read(self._get_path(file))
-            df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TEST_DATE", "TAKEN_DATE"], axis=1, inplace=True)
+            df.drop(["AGE", "GENDER", "ADMISSION_DATE", "TAKEN_DATE"], axis=1, inplace=True)
             df = _rename(df, additional_mappings={"SOLIDORGANTRANSPLANT": "solid_organ_transplant",
                                                   "CANCER": "cancer",
                                                   "SEVERERESPIRATORY": "severe_resp",
@@ -517,7 +517,9 @@ class Populate:
                                                   "PREGNANCYWITHCONGHEARTDIS": "pregnant_with_cong_heart_disease",
                                                   "GPIDENTIFIED_PATIENTS": "gp_identified_patients",
                                                   "RENAL_DIALYSIS": "renal_dialysis",
-                                                  "OTHER": "other"})
+                                                  "OTHER": "other",
+                                                  "TEST_DATE": "datetime"})
+            df = self._get_date_time(df=df, col_name="datetime")
             df.drop("request_location", axis=1, inplace=True)
             self._insert(df=df, table_name="Comorbid")
 
