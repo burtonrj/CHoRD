@@ -13,5 +13,5 @@ setup(
                       'requests==2.24.0',
                       'tqdm==4.49.0',
                       'dateparser==0.7.6',
-                      'IPython==7.18.1']
+                      'IPython==7.31.1']
 )
